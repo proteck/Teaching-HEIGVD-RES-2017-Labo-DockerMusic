@@ -9,8 +9,14 @@ var net = require("net")
 
 var multiCast = dgram.createSocket("udp4")
 
+/**
+ * Tableau de la liste des musiciens qu'on entend
+ */
 var musiciansJson = []
 
+/**
+ * Action lors de la reception des messages
+ */
 multiCast.on("message", function (msg, rinfo) {
     console.log(" <<< " + msg)
     var json = JSON.parse(msg)
@@ -27,24 +33,32 @@ multiCast.on("message", function (msg, rinfo) {
     musiciansJson.push(json)
 })
 
+/**
+ * Activation de l'écoute sur le port
+ */
 multiCast.bind(CAST_PORT, function () {
     multiCast.addMembership(IP)
 })
 
+/**
+ * Création du serveur pour l'interogation telnet et lancement
+ */
 var srv = net.createServer(function (socket) {
     socket.end(JSON.stringify(musiciansJson))
 }).listen(SRV_PORT)
 
+/**
+ * Fonction retirant les musiciens si on ne les entends pas pendant 5 secondes
+ */
 function clean() {
     console.log(" - Try clean")
     var actualTime = new Date()
 
     for (var i = 0; i < musiciansJson.length; i++) {
         if (actualTime - musiciansJson[i].time > INTERVAL_KEEP) {
-            console.log("remove: " + JSON.stringify(musiciansJson.splice))
+            console.log("remove: " + JSON.stringify(musiciansJson[i]))
             musiciansJson.splice(i, 1)
         }
     }
 }
-
 setInterval(clean, INTERVAL_CHECK)
